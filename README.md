@@ -50,7 +50,7 @@ Application de streaming complète basée sur : **React (Frontend)**, **Node.js/
 ## Installation
 ```bash
 # 1. Cloner le projet
-git clone https://github.com/tamimturki/film.git && cd film
+git clone https://github.com/Tamim-Tur/TP-film-docker.git  && cd film
 
 # 2. Configurer les variables d'environnement
 # Créer un fichier .env à la racine (voir .env.example)
