@@ -1,0 +1,82 @@
+version: '3.8'
+services:
+  #PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: streaming-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-streaming_db}
+      POSTGRES_USER: ${POSTGRES_USER:-streaming_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  #MongoDB
+  mongodb:
+    image: mongo:7-jammy
+    container_name: streaming-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - backend
+
+  # API
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: streaming-backend
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    environment:
+      NODE_ENV: production
+      PORT: 5050
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      COOKIE_EXPIRES_IN: ${COOKIE_EXPIRES_IN}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-streaming_db}
+      POSTGRES_USER: ${POSTGRES_USER:-streaming_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MONGO_URI: mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD}@mongodb:27017/streaming?authSource=admin
+    depends_on:
+      - postgres
+      - mongodb
+    networks:
+      - backend
+      - frontend
+    volumes:
+      - ./server/assets:/app/assets
+
+  # Frontend
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: streaming-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - frontend
+
+networks:
+  backend:
+    driver: bridge
+  frontend:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongodb_data:
